@@ -1,0 +1,1 @@
+curl -v -X POST "http://URL:PUERTO/dominio/exploradoc/service/api/node/workspace/SpacesStore/NODEREFCARPETA/children?alf_ticket=TICKET_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" -H "Content-Type: application/atom+xml" -d @/tests/alfresco.xml
