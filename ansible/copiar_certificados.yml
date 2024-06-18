@@ -26,7 +26,7 @@
 
     - name: Mostrar información sobre la existencia de certificados en el origen
       debug:
-        msg: "Certificado {{ item.item }} existencia en origen: {{ item.stat.exists }}"
+        msg: "Certificado {{ item }} existencia en origen: {{ item.stat.exists }}"
       with_items: "{{ cert_source_stat.results }}"
       loop_control:
         loop_var: item
@@ -47,7 +47,7 @@
 
     - name: Mostrar información sobre la verificación de certificados
       debug:
-        msg: "Certificado {{ item.item }} existencia en destino: {{ item.stat.exists }}"
+        msg: "Certificado {{ item }} existencia en destino: {{ item.stat.exists }}"
       with_items: "{{ verify_cert_stat.results }}"
       loop_control:
         loop_var: item
@@ -56,5 +56,5 @@
       assert:
         that:
           - item.stat.exists
-        fail_msg: "El certificado {{ item.item }} no está instalado correctamente"
+        fail_msg: "El certificado {{ item }} no está instalado correctamente"
       with_items: "{{ verify_cert_stat.results }}"
