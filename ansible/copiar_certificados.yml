@@ -2,6 +2,12 @@
 - name: Playbook para instalar certificados y actualizar ca-trust
   hosts: all
   become: yes
+  vars:
+    cert_path: "/etc/ansible/playbooks/linux/pruebas/mcordero/cert"
+    certs:
+      - cert1.crt
+      - cert2.crt
+      - cert3.crt
   tasks:
     - name: Comprobar conectividad con el host
       ping:
@@ -10,16 +16,21 @@
       stat:
         path: /etc/pki/ca-trust/source/anchors/{{ item }}
       register: cert_stat
-      with_items:
-        - cert1.crt
-        - cert2.crt
-        - cert3.crt
+      with_items: "{{ certs }}"
+
+    - name: Comprobar si los certificados existen en el origen
+      stat:
+        path: "{{ cert_path }}/{{ item }}"
+      register: cert_source_stat
+      with_items: "{{ certs }}"
 
     - name: Copiar certificados si no están presentes
       copy:
-        src: "{{ item }}"
+        src: "{{ cert_path }}/{{ item.item }}"
         dest: /etc/pki/ca-trust/source/anchors/
-      when: not item.stat.exists
+      when:
+        - not item.stat.exists
+        - item.item in (cert_source_stat.results | selectattr('stat.exists', 'equalto', True) | map(attribute='item') | list)
       with_items: "{{ cert_stat.results }}"
       loop_control:
         loop_var: item
@@ -32,10 +43,7 @@
       stat:
         path: /etc/pki/ca-trust/source/anchors/{{ item }}
       register: verify_cert_stat
-      with_items:
-        - cert1.crt
-        - cert2.crt
-        - cert3.crt
+      with_items: "{{ certs }}"
 
     - name: Asegurar que todos los certificados están instalados
       assert:
