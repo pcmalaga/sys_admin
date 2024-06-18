@@ -12,11 +12,11 @@
     - name: Comprobar conectividad con el host
       ping:
 
-    - name: Comprobar si los certificados ya están instalados
-      stat:
-        path: /etc/pki/ca-trust/source/anchors/{{ item }}
-      register: cert_stat
-      with_items: "{{ certs }}"
+    - name: Asegurarse de que el directorio de destino existe
+      file:
+        path: /etc/pki/ca-trust/source/anchors
+        state: directory
+        mode: '0755'
 
     - name: Comprobar si los certificados existen en el origen
       stat:
@@ -31,37 +31,23 @@
       loop_control:
         loop_var: item
 
-    - name: Mostrar información sobre la existencia de certificados en el destino
-      debug:
-        msg: "Certificado {{ item.item }} existencia en destino: {{ item.stat.exists }}"
-      with_items: "{{ cert_stat.results }}"
-      loop_control:
-        loop_var: item
-
-    - name: Copiar certificados si no están presentes
+    - name: Copiar certificados al destino
       copy:
-        src: "{{ cert_path }}/{{ item.item }}"
-        dest: /etc/pki/ca-trust/source/anchors/
-      when:
-        - not item.stat.exists
-        - item.item in (cert_source_stat.results | selectattr('stat.exists', 'equalto', True) | map(attribute='item') | list)
-      with_items: "{{ cert_stat.results }}"
+        src: "{{ cert_path }}/{{ item }}"
+        dest: /etc/pki/ca-trust/source/anchors/{{ item }}"
+      with_items: "{{ certs }}"
       loop_control:
         loop_var: item
-
-    - name: Actualizar el ca-trust
-      command: update-ca-trust
-      when: "'false' in (cert_stat.results | map(attribute='stat.exists') | list)"
 
     - name: Verificar la instalación de los certificados
       stat:
-        path: /etc/pki/ca-trust/source/anchors/{{ item }}
+        path: /etc/pki/ca-trust/source/anchors/{{ item }}"
       register: verify_cert_stat
       with_items: "{{ certs }}"
 
     - name: Mostrar información sobre la verificación de certificados
       debug:
-        msg: "Certificado {{ item.item }} existencia después de copia: {{ item.stat.exists }}"
+        msg: "Certificado {{ item.item }} existencia en destino: {{ item.stat.exists }}"
       with_items: "{{ verify_cert_stat.results }}"
       loop_control:
         loop_var: item
