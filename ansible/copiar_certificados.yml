@@ -33,15 +33,15 @@
 
     - name: Copiar certificados al destino
       copy:
-        src: "{{ cert_path }}/{{ item }}"
-        dest: /etc/pki/ca-trust/source/anchors/{{ item }}"
+        src: "{{ cert_path }}/{{ item | replace(\"'\", \"\") | replace('\"', '') }}"
+        dest: /etc/pki/ca-trust/source/anchors/{{ item | replace(\"'\", \"\") | replace('\"', '') }}
       with_items: "{{ certs }}"
       loop_control:
         loop_var: item
 
     - name: Verificar la instalación de los certificados
       stat:
-        path: /etc/pki/ca-trust/source/anchors/{{ item }}"
+        path: /etc/pki/ca-trust/source/anchors/{{ item | replace(\"'\", \"\") | replace('\"', '') }}
       register: verify_cert_stat
       with_items: "{{ certs }}"
 
