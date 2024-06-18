@@ -3,11 +3,11 @@
   hosts: all
   become: yes
   vars:
-    cert_path: "/etc/ansible/playbooks/linux/pruebas/mcordero/cert"
+    cert_path: "/etc/ansible/playbooks/linux/pruebas/mcordero/cert_netskope"
     certs:
+      - caCert.pem
+      - root_ca.pem
       - rootcaCert.pem
-      - cert2.crt
-      - cert3.crt
   tasks:
     - name: Comprobar conectividad con el host
       ping:
@@ -18,19 +18,33 @@
         state: directory
         mode: '0755'
 
-    - name: Copiar certificados al destino usando fetch
-      fetch:
+    - name: Comprobar si los certificados existen en el origen
+      stat:
+        path: "{{ cert_path }}/{{ item }}"
+      register: cert_source_stat
+      with_items: "{{ certs }}"
+
+    - name: Mostrar información sobre la existencia de certificados en el origen
+      debug:
+        msg: "Certificado {{ item }} existencia en origen: {{ item.stat.exists }}"
+      with_items: "{{ cert_source_stat.results }}"
+      loop_control:
+        loop_var: item
+
+    - name: Copiar certificados al destino
+      copy:
         src: "{{ cert_path }}/{{ item }}"
         dest: /etc/pki/ca-trust/source/anchors/{{ item }}
-        flat: yes
       with_items: "{{ certs }}"
+      loop_control:
+        loop_var: item
 
     - name: Actualizar el ca-trust
       command: update-ca-trust
 
     - name: Verificar la instalación de los certificados
       stat:
-        path: /etc/pki/ca-trust/source/anchors/{{ item }}
+        path: /etc/pki/ca-trust/source/anchors/{{ item }}"
       register: verify_cert_stat
       with_items: "{{ certs }}"
 
