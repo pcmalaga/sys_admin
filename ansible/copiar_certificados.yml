@@ -1,6 +1,6 @@
 ---
 - name: Playbook para instalar certificados y actualizar ca-trust
-  hosts: all
+  hosts: emasesalnx
   become: yes
   vars:
     cert_path: "/etc/ansible/playbooks/linux/pruebas/mcordero/cert_netskope"
@@ -18,33 +18,41 @@
         state: directory
         mode: '0755'
 
+    - name: Comprobar si los certificados ya están instalados
+      stat:
+        path: /etc/pki/ca-trust/source/anchors/{{ item }}
+      register: cert_stat
+      with_items: "{{ certs }}"
+
     - name: Comprobar si los certificados existen en el origen
       stat:
         path: "{{ cert_path }}/{{ item }}"
       register: cert_source_stat
       with_items: "{{ certs }}"
 
-    - name: Mostrar información sobre la existencia de certificados en el origen
+    - name: Mostrar información sobre la existencia de certificados en el origen y destino
       debug:
-        msg: "Certificado {{ item }} existencia en origen: {{ item.stat.exists }}"
+        msg: "Certificado {{ item.item }} existencia en origen: {{ item.stat.exists }} y en destino: {{ cert_stat.results[ansible_loop.index0].stat.exists }}"
       with_items: "{{ cert_source_stat.results }}"
       loop_control:
         loop_var: item
 
-    - name: Copiar certificados al destino
+    - name: Copiar certificados al destino si no están presentes
       copy:
         src: "{{ cert_path }}/{{ item }}"
-        dest: /etc/pki/ca-trust/source/anchors/{{ item }}
+        dest: /etc/pki/ca-trust/source/anchors/{{ item }}"
+      when: not cert_stat.results[ansible_loop.index0].stat.exists
       with_items: "{{ certs }}"
       loop_control:
         loop_var: item
 
-    - name: Actualizar el ca-trust
+    - name: Actualizar el ca-trust si algún certificado fue copiado
       command: update-ca-trust
+      when: "'false' in (cert_stat.results | map(attribute='stat.exists') | list)"
 
     - name: Verificar la instalación de los certificados
       stat:
-        path: /etc/pki/ca-trust/source/anchors/{{ item }}"
+        path: /etc/pki/ca-trust/source/anchors/{{ item }}
       register: verify_cert_stat
       with_items: "{{ certs }}"
 
