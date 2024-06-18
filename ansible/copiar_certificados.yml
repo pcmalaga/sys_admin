@@ -5,7 +5,7 @@
   vars:
     cert_path: "/etc/ansible/playbooks/linux/pruebas/mcordero/cert"
     certs:
-      - cert1.crt
+      - rootcaCert.pem
       - cert2.crt
       - cert3.crt
   tasks:
@@ -23,6 +23,20 @@
         path: "{{ cert_path }}/{{ item }}"
       register: cert_source_stat
       with_items: "{{ certs }}"
+
+    - name: Mostrar información sobre la existencia de certificados en el origen
+      debug:
+        msg: "Certificado {{ item.item }} existencia en origen: {{ item.stat.exists }}"
+      with_items: "{{ cert_source_stat.results }}"
+      loop_control:
+        loop_var: item
+
+    - name: Mostrar información sobre la existencia de certificados en el destino
+      debug:
+        msg: "Certificado {{ item.item }} existencia en destino: {{ item.stat.exists }}"
+      with_items: "{{ cert_stat.results }}"
+      loop_control:
+        loop_var: item
 
     - name: Copiar certificados si no están presentes
       copy:
@@ -44,6 +58,13 @@
         path: /etc/pki/ca-trust/source/anchors/{{ item }}
       register: verify_cert_stat
       with_items: "{{ certs }}"
+
+    - name: Mostrar información sobre la verificación de certificados
+      debug:
+        msg: "Certificado {{ item.item }} existencia después de copia: {{ item.stat.exists }}"
+      with_items: "{{ verify_cert_stat.results }}"
+      loop_control:
+        loop_var: item
 
     - name: Asegurar que todos los certificados están instalados
       assert:
